@@ -32,6 +32,7 @@ SIGNAL_THRESHOLD = 0.6       # minimum score to take a trade
 
 # LLM
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
 LLM_MODEL = "gpt-4o"
 LLM_TEMPERATURE = 0.0
 

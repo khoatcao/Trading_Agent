@@ -4,11 +4,16 @@ from langchain_core.messages import HumanMessage
 from graph.state import TradingState
 from tools.indicators import get_all_indicators
 from prompts.analyst_prompt import build_analyst_prompt
-from config import LLM_MODEL, LLM_TEMPERATURE, SIGNAL_THRESHOLD
+from config import LLM_MODEL, LLM_TEMPERATURE, SIGNAL_THRESHOLD, OPENAI_API_KEY, OPENAI_API_BASE
 import json
 
 
-llm = ChatOpenAI(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
+llm = ChatOpenAI(
+    model=LLM_MODEL,
+    temperature=LLM_TEMPERATURE,
+    api_key=OPENAI_API_KEY,
+    base_url=OPENAI_API_BASE,
+)
 
 
 def analyst_node(state: TradingState) -> TradingState:
