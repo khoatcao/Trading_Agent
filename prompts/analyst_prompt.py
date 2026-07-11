@@ -1,8 +1,8 @@
 import json
 
 
-def build_analyst_prompt(symbol: str, indicators: dict, futures: dict, whale: dict) -> str:
-    return f"""You are a professional crypto futures trader analyzing {symbol} on a 15-minute timeframe.
+def build_analyst_prompt(symbol: str, timeframe: str, indicators: dict, futures: dict, whale: dict) -> str:
+    return f"""You are a professional crypto futures trader analyzing {symbol} on a {timeframe} timeframe.
 
 ## Technical Indicators
 {json.dumps(indicators, indent=2)}
@@ -34,7 +34,7 @@ Score rules:
 - Score 0.0 = no clear signal
 - Only recommend a trade if |score| >= 0.6
 
-Respond ONLY with valid JSON in this exact format:
+Respond ONLY with valid JSON in this exact format and do not include markdown code fences:
 {{
   "direction": "LONG" | "SHORT" | "NONE",
   "score": <float between -1.0 and 1.0>,

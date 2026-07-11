@@ -19,7 +19,12 @@ def calculate_position_size(balance: float, entry: float, stop_loss: float, risk
     distance = abs(entry - stop_loss)
     if distance == 0:
         return 0.0
-    return round(risk_amount / distance, 6)
+
+    size_by_risk = risk_amount / distance
+    exposure_cap = (balance * MAX_EXPOSURE) / entry
+    position_size = min(size_by_risk, exposure_cap)
+
+    return round(position_size, 6)
 
 
 def calculate_stop_loss(entry: float, direction: str, pct: float = 0.03) -> float:

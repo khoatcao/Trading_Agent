@@ -36,12 +36,16 @@ def main():
         scheduler.add_job(
             run_trading_cycle,
             trigger="interval",
-            minutes=15,
+            minutes=1,
             args=[symbol],
             id=f"trading_{symbol.replace('/', '_')}",
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=30,
         )
 
-    print(f"[SCHEDULER] Running for symbols: {SYMBOLS} every 15 minutes")
+    print(f"[SCHEDULER] Running for symbols: {SYMBOLS} every 1 minute")
+    print(f"[SCHEDULER] Active trading symbols: {', '.join(SYMBOLS)}")
     print("[SCHEDULER] Press Ctrl+C to stop")
 
     try:

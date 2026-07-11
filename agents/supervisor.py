@@ -18,21 +18,21 @@ def route_after_analyst(state: TradingState) -> str:
     signals = state.get("signals", {})
     score = abs(float(signals.get("score", 0.0)))
     direction = signals.get("direction", "NONE")
-
-    if direction == "NONE" or score < SIGNAL_THRESHOLD:
-        return "end"
-    return "risk"
+    route = "end" if direction == "NONE" or score < SIGNAL_THRESHOLD else "risk"
+    print(f"[SUPERVISOR] route_after_analyst -> {route} (direction={direction}, score={score})")
+    return route
 
 
 def route_after_risk(state: TradingState) -> str:
     risk = state.get("risk", {})
-    if not risk.get("approved", False):
-        return "end"
-    return "execution"
+    approved = bool(risk.get("approved", False))
+    route = "execution" if approved else "end"
+    print(f"[SUPERVISOR] route_after_risk -> {route} (approved={approved})")
+    return route
 
 
 def route_after_monitor(state: TradingState) -> str:
     action = state.get("monitor_action", "HOLD")
-    if action in ("CLOSE", "REDUCE"):
-        return "execution"
-    return "monitor"
+    route = "execution" if action in ("CLOSE", "REDUCE") else "monitor"
+    print(f"[SUPERVISOR] route_after_monitor -> {route} (action={action})")
+    return route

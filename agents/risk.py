@@ -21,6 +21,7 @@ llm = ChatOpenAI(
 
 
 def risk_node(state: TradingState) -> TradingState:
+    symbol = state.get("symbol", "UNKNOWN")
     signals = state["signals"]
     market_data = state["market_data"]
     errors = state.get("errors", [])
@@ -62,6 +63,7 @@ def risk_node(state: TradingState) -> TradingState:
         )
         response = llm.invoke([HumanMessage(content=prompt)])
 
+        symbol = state.get("symbol", "UNKNOWN")
         risk = {
             "approved": validation["approved"],
             "position_size": position_size,
@@ -75,9 +77,18 @@ def risk_node(state: TradingState) -> TradingState:
             "checks": validation["checks"],
             "reason": response.content.strip(),
         }
+        print(f"[RISK] symbol={symbol} approved={risk['approved']} position_size={risk['position_size']} leverage={risk['leverage']} entry={risk['entry_price']} stop_loss={risk['stop_loss']} tp={risk['take_profit']}")
+        if not risk["approved"]:
+            print(f"[RISK] symbol={symbol} decision=REJECTED reason={risk.get('reason')}")
+        # verbose debug: show balance, position value and validation checks
+        try:
+            print(f"[RISK-DEBUG] balance={balance} position_value={round(validation.get('position_value', position_size*entry),6)} checks={validation['checks']} liq_price={validation['liq_price']} liq_distance_pct={validation['liq_distance_pct']}")
+        except Exception:
+            pass
 
     except Exception as e:
         errors.append(f"risk:{str(e)}")
         risk = {"approved": False, "reason": str(e)}
+        print(f"[RISK] symbol={state.get('symbol')} error={e}")
 
     return {**state, "risk": risk, "errors": errors}

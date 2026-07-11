@@ -4,20 +4,30 @@ from config import (
     TESTNET, TIMEFRAME, CANDLE_LIMIT
 )
 
+_exchange: ccxt.bybit | None = None
+_connected: bool = False
+
 
 def get_exchange() -> ccxt.bybit:
-    exchange = ccxt.bybit({
+    global _exchange, _connected
+    if _exchange is not None:
+        return _exchange
+
+    _exchange = ccxt.bybit({
         "apiKey": EXCHANGE_API_KEY,
         "secret": EXCHANGE_API_SECRET,
         "enableRateLimit": True,
         "options": {"defaultType": "linear"},
     })
     if TESTNET:
-        exchange.set_sandbox_mode(True)
-        print("[EXCHANGE] Connected to Bybit TESTNET (demo account)")
-    else:
-        print("[EXCHANGE] Connected to Bybit LIVE account")
-    return exchange
+        _exchange.set_sandbox_mode(True)
+    if not _connected:
+        _connected = True
+        if TESTNET:
+            print("[EXCHANGE] Connected to Bybit TESTNET (demo account)")
+        else:
+            print("[EXCHANGE] Connected to Bybit LIVE account")
+    return _exchange
 
 
 def fetch_ohlcv(symbol: str, timeframe: str = TIMEFRAME, limit: int = CANDLE_LIMIT) -> list:

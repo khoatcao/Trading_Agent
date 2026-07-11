@@ -17,7 +17,9 @@ def market_data_node(state: TradingState) -> TradingState:
     try:
         market_data["ohlcv"] = fetch_ohlcv(symbol, timeframe)
     except Exception as e:
-        errors.append(f"market_data:ohlcv:{str(e)}")
+        err = f"market_data:ohlcv:{type(e).__name__}:{e}"
+        print(f"[MARKET_DATA] symbol={symbol} ohlcv error={err}")
+        errors.append(err)
 
     try:
         ticker = fetch_ticker(symbol)
@@ -26,29 +28,39 @@ def market_data_node(state: TradingState) -> TradingState:
         market_data["bid"] = ticker.get("bid")
         market_data["ask"] = ticker.get("ask")
     except Exception as e:
-        errors.append(f"market_data:ticker:{str(e)}")
+        err = f"market_data:ticker:{type(e).__name__}:{e}"
+        print(f"[MARKET_DATA] symbol={symbol} ticker error={err}")
+        errors.append(err)
 
     try:
         funding = fetch_funding_rate(symbol)
         market_data["funding_rate"] = funding.get("fundingRate")
         market_data["next_funding_time"] = funding.get("fundingDatetime")
     except Exception as e:
-        errors.append(f"market_data:funding:{str(e)}")
+        err = f"market_data:funding:{type(e).__name__}:{e}"
+        print(f"[MARKET_DATA] symbol={symbol} funding error={err}")
+        errors.append(err)
 
     try:
         oi = fetch_open_interest(symbol)
         market_data["open_interest"] = oi.get("openInterest")
     except Exception as e:
-        errors.append(f"market_data:open_interest:{str(e)}")
+        err = f"market_data:open_interest:{type(e).__name__}:{e}"
+        print(f"[MARKET_DATA] symbol={symbol} open_interest error={err}")
+        errors.append(err)
 
     try:
         market_data["order_book"] = fetch_order_book(symbol)
     except Exception as e:
-        errors.append(f"market_data:order_book:{str(e)}")
+        err = f"market_data:order_book:{type(e).__name__}:{e}"
+        print(f"[MARKET_DATA] symbol={symbol} order_book error={err}")
+        errors.append(err)
 
     try:
         market_data["whale_data"] = fetch_all_whale_data(base_asset)
     except Exception as e:
-        errors.append(f"market_data:whale:{str(e)}")
+        err = f"market_data:whale:{type(e).__name__}:{e}"
+        print(f"[MARKET_DATA] symbol={symbol} whale error={err}")
+        errors.append(err)
 
     return {**state, "market_data": market_data, "errors": errors}

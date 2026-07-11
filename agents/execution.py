@@ -59,6 +59,7 @@ def execution_node(state: TradingState) -> TradingState:
             "status": "open",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
+        print(f"[EXECUTION] symbol={symbol} order_id={order_result['order_id']} side={side} amount={risk['position_size']} status={order_result['status']}")
 
         send_alert(
             f"TRADE OPENED\n"
