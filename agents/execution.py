@@ -22,34 +22,58 @@ def execution_node(state: TradingState) -> TradingState:
         set_margin_mode(symbol, risk["margin_mode"])
         set_leverage(symbol, risk["leverage"])
 
-        entry_order = create_order(
-            symbol=symbol,
-            order_type="market",
-            side=side,
-            amount=risk["position_size"],
-        )
+        print(f"[EXECUTION-DEBUG] placing entry order symbol={symbol} side={side} amount={risk['position_size']}")
+        try:
+            entry_order = create_order(
+                symbol=symbol,
+                order_type="market",
+                side=side,
+                amount=risk["position_size"],
+                params={"positionIdx": 1},
+            )
+            print(f"[EXECUTION-DEBUG] entry_order response={entry_order}")
+        except Exception as e:
+            errors.append(f"execution:create_entry_order:{str(e)}")
+            print(f"[EXECUTION-ERROR] entry_order failed for {symbol}: {e}")
+            raise
 
-        sl_order = create_order(
-            symbol=symbol,
-            order_type="stop_market",
-            side=close_side,
-            amount=risk["position_size"],
-            params={
-                "stopPrice": risk["stop_loss"],
-                "reduceOnly": True,
-            },
-        )
+        print(f"[EXECUTION-DEBUG] placing SL order symbol={symbol} side={close_side} stop={risk['stop_loss']}")
+        try:
+            sl_order = create_order(
+                symbol=symbol,
+                order_type="stop_market",
+                side=close_side,
+                amount=risk["position_size"],
+                params={
+                    "stopPrice": risk["stop_loss"],
+                    "reduceOnly": True,
+                    "positionIdx": 1,
+                },
+            )
+            print(f"[EXECUTION-DEBUG] sl_order response={sl_order}")
+        except Exception as e:
+            errors.append(f"execution:create_sl_order:{str(e)}")
+            print(f"[EXECUTION-ERROR] sl_order failed for {symbol}: {e}")
+            raise
 
-        tp_order = create_order(
-            symbol=symbol,
-            order_type="take_profit_market",
-            side=close_side,
-            amount=risk["position_size"],
-            params={
-                "stopPrice": risk["take_profit"],
-                "reduceOnly": True,
-            },
-        )
+        print(f"[EXECUTION-DEBUG] placing TP order symbol={symbol} side={close_side} tp={risk['take_profit']}")
+        try:
+            tp_order = create_order(
+                symbol=symbol,
+                order_type="take_profit_market",
+                side=close_side,
+                amount=risk["position_size"],
+                params={
+                    "stopPrice": risk["take_profit"],
+                    "reduceOnly": True,
+                    "positionIdx": 1,
+                },
+            )
+            print(f"[EXECUTION-DEBUG] tp_order response={tp_order}")
+        except Exception as e:
+            errors.append(f"execution:create_tp_order:{str(e)}")
+            print(f"[EXECUTION-ERROR] tp_order failed for {symbol}: {e}")
+            raise
 
         order_result = {
             "order_id": entry_order["id"],
@@ -88,6 +112,7 @@ def execution_node(state: TradingState) -> TradingState:
     except Exception as e:
         errors.append(f"execution:{str(e)}")
         order_result = {"status": "failed", "reason": str(e)}
+        print(f"[EXECUTION-ERROR] execution failed for {symbol}: {e}")
 
     return {**state, "order_result": order_result, "errors": errors}
 

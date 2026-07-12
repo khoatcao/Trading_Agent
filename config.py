@@ -73,9 +73,9 @@ CANDLE_LIMIT = 200
 MONITOR_INTERVAL_SECONDS = 120
 
 # Risk
-MAX_LEVERAGE = 10
+MAX_LEVERAGE = 2
 MARGIN_MODE = "isolated"
-RISK_PER_TRADE = 0.02        # 2% of balance per trade
+RISK_PER_TRADE = 0.0005      # 0.05% of balance per trade (reduced for small-balance testing)
 MAX_EXPOSURE = 0.20          # max 20% of portfolio in one position
 MAX_DAILY_DRAWDOWN = 0.05    # halt if -5% on the day
 MIN_LIQ_DISTANCE = 0.15      # liquidation must be >15% away from entry

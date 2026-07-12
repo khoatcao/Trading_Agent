@@ -15,8 +15,6 @@ def monitor_node(state: TradingState) -> TradingState:
     monitor_action = "HOLD"
 
     try:
-        time.sleep(MONITOR_INTERVAL_SECONDS)
-
         positions = fetch_positions(symbol)
         if not positions:
             return {**state, "monitor_action": "CLOSE", "errors": errors}

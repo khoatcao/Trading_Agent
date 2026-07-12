@@ -33,6 +33,6 @@ def route_after_risk(state: TradingState) -> str:
 
 def route_after_monitor(state: TradingState) -> str:
     action = state.get("monitor_action", "HOLD")
-    route = "execution" if action in ("CLOSE", "REDUCE") else "monitor"
+    route = "execution" if action in ("CLOSE", "REDUCE") else "end"
     print(f"[SUPERVISOR] route_after_monitor -> {route} (action={action})")
     return route

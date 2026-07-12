@@ -21,6 +21,19 @@ def get_exchange() -> ccxt.bybit:
     })
     if TESTNET:
         _exchange.set_sandbox_mode(True)
+    # Perform a quick permission check to detect unified-account permission issues.
+    try:
+        # fetch_balance will hit a private endpoint and surface permission errors like retCode 10005
+        _exchange.fetch_balance({"type": "future"})
+    except Exception as e:
+        errstr = str(e)
+        if "10005" in errstr or "Permission denied" in errstr or "query-api" in errstr:
+            raise RuntimeError(
+                "Bybit API permission error: your API key needs Account Transfer, Subaccount Transfer, or Withdrawal permission (check API Management). Full error: "
+                + errstr
+            )
+        # otherwise, print a warning and continue — the error may be transient
+        print(f"[EXCHANGE] permission check warning: {errstr}")
     if not _connected:
         _connected = True
         if TESTNET:
@@ -68,12 +81,26 @@ def fetch_positions(symbol: str) -> list:
 
 def set_leverage(symbol: str, leverage: int) -> dict:
     exchange = get_exchange()
-    return exchange.set_leverage(leverage, symbol)
+    try:
+        return exchange.set_leverage(leverage, symbol)
+    except Exception as e:
+        err = str(e).lower()
+        if "leverage not modified" in err or "110043" in err:
+            print(f"[EXCHANGE] leverage already set for {symbol}: {leverage}x")
+            return {}
+        raise
 
 
 def set_margin_mode(symbol: str, margin_mode: str) -> dict:
     exchange = get_exchange()
-    return exchange.set_margin_mode(margin_mode, symbol)
+    try:
+        return exchange.set_margin_mode(margin_mode, symbol)
+    except Exception as e:
+        err = str(e).lower()
+        if "margin mode not modified" in err or "margin not modified" in err:
+            print(f"[EXCHANGE] margin mode already set for {symbol}: {margin_mode}")
+            return {}
+        raise
 
 
 def create_order(symbol: str, order_type: str, side: str, amount: float, price: float = None, params: dict = {}) -> dict:
