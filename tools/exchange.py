@@ -1,7 +1,7 @@
 import ccxt
 from config import (
     EXCHANGE_NAME, EXCHANGE_API_KEY, EXCHANGE_API_SECRET,
-    TESTNET, TIMEFRAME, CANDLE_LIMIT
+    TIMEFRAME, CANDLE_LIMIT
 )
 
 _exchange: ccxt.bybit | None = None
@@ -10,19 +10,12 @@ _connected: bool = False
 
 def get_exchange() -> ccxt.bybit:
     exchange = ccxt.bybit({
+        "apiKey": EXCHANGE_API_KEY,
+        "secret": EXCHANGE_API_SECRET,
         "enableRateLimit": True,
         "options": {"defaultType": "linear"},
     })
-    if TESTNET:
-        exchange.set_sandbox_mode(True)
-        print("[EXCHANGE] Connected to Bybit TESTNET (demo account)")
-    else:
-        print("[EXCHANGE] Connected to Bybit LIVE account")
-
-    # load markets using public endpoints only, then inject credentials
     exchange.load_markets()
-    exchange.apiKey = EXCHANGE_API_KEY
-    exchange.secret = EXCHANGE_API_SECRET
     return exchange
 
 
