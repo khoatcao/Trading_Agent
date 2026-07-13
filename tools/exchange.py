@@ -9,44 +9,11 @@ _connected: bool = False
 
 
 def get_exchange() -> ccxt.bybit:
-<<<<<<< HEAD
-    global _exchange, _connected
-    if _exchange is not None:
-        return _exchange
-
-    _exchange = ccxt.bybit({
-        "apiKey": EXCHANGE_API_KEY,
-        "secret": EXCHANGE_API_SECRET,
-=======
     exchange = ccxt.bybit({
->>>>>>> d0b86c9 (update local model)
         "enableRateLimit": True,
         "options": {"defaultType": "linear"},
     })
     if TESTNET:
-<<<<<<< HEAD
-        _exchange.set_sandbox_mode(True)
-    # Perform a quick permission check to detect unified-account permission issues.
-    try:
-        # fetch_balance will hit a private endpoint and surface permission errors like retCode 10005
-        _exchange.fetch_balance({"type": "future"})
-    except Exception as e:
-        errstr = str(e)
-        if "10005" in errstr or "Permission denied" in errstr or "query-api" in errstr:
-            raise RuntimeError(
-                "Bybit API permission error: your API key needs Account Transfer, Subaccount Transfer, or Withdrawal permission (check API Management). Full error: "
-                + errstr
-            )
-        # otherwise, print a warning and continue — the error may be transient
-        print(f"[EXCHANGE] permission check warning: {errstr}")
-    if not _connected:
-        _connected = True
-        if TESTNET:
-            print("[EXCHANGE] Connected to Bybit TESTNET (demo account)")
-        else:
-            print("[EXCHANGE] Connected to Bybit LIVE account")
-    return _exchange
-=======
         exchange.set_sandbox_mode(True)
         print("[EXCHANGE] Connected to Bybit TESTNET (demo account)")
     else:
@@ -57,7 +24,6 @@ def get_exchange() -> ccxt.bybit:
     exchange.apiKey = EXCHANGE_API_KEY
     exchange.secret = EXCHANGE_API_SECRET
     return exchange
->>>>>>> d0b86c9 (update local model)
 
 
 def fetch_ohlcv(symbol: str, timeframe: str = TIMEFRAME, limit: int = CANDLE_LIMIT) -> list:

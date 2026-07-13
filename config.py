@@ -65,15 +65,8 @@ if not EXCHANGE_API_KEY or not EXCHANGE_API_SECRET:
     )
 
 # Trading
-<<<<<<< HEAD
-SYMBOLS = [s.strip() for s in os.getenv(
-    "SYMBOLS", "DOGE/USDT:USDT"
-).split(",") if s.strip()]
-TIMEFRAME = "1m"
-=======
 SYMBOLS = ["BTC/USDT:USDT", "ETH/USDT:USDT"]
 TIMEFRAME = os.getenv("TIMEFRAME", "15m")   # override with TIMEFRAME=1m for testing
->>>>>>> d0b86c9 (update local model)
 CANDLE_LIMIT = 200
 MONITOR_INTERVAL_SECONDS = int(os.getenv("MONITOR_INTERVAL_SECONDS", "120"))
 
