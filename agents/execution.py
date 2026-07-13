@@ -29,7 +29,6 @@ def execution_node(state: TradingState) -> TradingState:
                 order_type="market",
                 side=side,
                 amount=risk["position_size"],
-                params={"positionIdx": 1},
             )
             print(f"[EXECUTION-DEBUG] entry_order response={entry_order}")
         except Exception as e:
