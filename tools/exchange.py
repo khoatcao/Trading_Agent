@@ -10,12 +10,12 @@ _connected: bool = False
 
 def get_exchange() -> ccxt.bybit:
     exchange = ccxt.bybit({
-        "apiKey": EXCHANGE_API_KEY,
-        "secret": EXCHANGE_API_SECRET,
         "enableRateLimit": True,
-        "options": {"defaultType": "linear"},
+        "options": {"defaultType": "linear", "fetchCurrencies": False},
     })
     exchange.load_markets()
+    exchange.apiKey = EXCHANGE_API_KEY
+    exchange.secret = EXCHANGE_API_SECRET
     return exchange
 
 
