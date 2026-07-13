@@ -25,16 +25,16 @@ def fetch_bybit_liquidations(symbol: str = "BTC/USDT:USDT") -> dict:
 # --- DefiLlama (completely free, no API key) ---
 
 def fetch_defillama_global_tvl() -> dict:
-    url = "https://api.llama.fi/v2/globalCharts"
+    url = "https://api.llama.fi/v2/historicalChainTvl"
     resp = requests.get(url, timeout=10)
     resp.raise_for_status()
     data = resp.json()
     if isinstance(data, list) and len(data) >= 2:
-        latest = data[-1].get("totalLiquidityUSD", 0)
-        previous = data[-2].get("totalLiquidityUSD", 0)
+        latest = data[-1].get("tvl", 0)
+        previous = data[-2].get("tvl", 0)
         change_pct = ((latest - previous) / previous * 100) if previous else 0
-        return {"global_tvl": latest, "tvl_change_pct_1h": round(change_pct, 4)}
-    return {"global_tvl": None, "tvl_change_pct_1h": None}
+        return {"global_tvl": latest, "tvl_change_pct_1d": round(change_pct, 4)}
+    return {"global_tvl": None, "tvl_change_pct_1d": None}
 
 
 # --- Aggregator ---

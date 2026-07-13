@@ -1,4 +1,4 @@
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
 from graph.state import TradingState
@@ -8,16 +8,11 @@ from tools.risk_calc import (
 )
 from tools.exchange import fetch_balance
 from prompts.risk_prompt import build_risk_prompt
-from config import LLM_MODEL, LLM_TEMPERATURE, MAX_LEVERAGE, MARGIN_MODE, OPENAI_API_KEY, OPENAI_API_BASE
+from config import LLM_MODEL, LLM_TEMPERATURE, MAX_LEVERAGE, MARGIN_MODE
 import json
 
 
-llm = ChatOpenAI(
-    model=LLM_MODEL,
-    temperature=LLM_TEMPERATURE,
-    api_key=OPENAI_API_KEY,
-    base_url=OPENAI_API_BASE,
-)
+llm = ChatOllama(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
 
 
 def risk_node(state: TradingState) -> TradingState:

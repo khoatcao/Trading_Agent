@@ -65,12 +65,17 @@ if not EXCHANGE_API_KEY or not EXCHANGE_API_SECRET:
     )
 
 # Trading
+<<<<<<< HEAD
 SYMBOLS = [s.strip() for s in os.getenv(
     "SYMBOLS", "DOGE/USDT:USDT"
 ).split(",") if s.strip()]
 TIMEFRAME = "1m"
+=======
+SYMBOLS = ["BTC/USDT:USDT", "ETH/USDT:USDT"]
+TIMEFRAME = os.getenv("TIMEFRAME", "15m")   # override with TIMEFRAME=1m for testing
+>>>>>>> d0b86c9 (update local model)
 CANDLE_LIMIT = 200
-MONITOR_INTERVAL_SECONDS = 120
+MONITOR_INTERVAL_SECONDS = int(os.getenv("MONITOR_INTERVAL_SECONDS", "120"))
 
 # Risk
 MAX_LEVERAGE = 2
@@ -81,11 +86,13 @@ MAX_DAILY_DRAWDOWN = 0.05    # halt if -5% on the day
 MIN_LIQ_DISTANCE = 0.15      # liquidation must be >15% away from entry
 SIGNAL_THRESHOLD = 0.6       # minimum score to take a trade
 
-# LLM
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
-LLM_MODEL = "gpt-4o"
+# LLM (local Ollama — no API key needed)
+LLM_MODEL = os.getenv("LLM_MODEL", "qwen2.5:7b")
 LLM_TEMPERATURE = 0.0
+
+# LangSmith observability (set LANGCHAIN_TRACING_V2=true in .env to enable)
+LANGCHAIN_TRACING_V2 = os.getenv("LANGCHAIN_TRACING_V2", "false")
+LANGCHAIN_PROJECT = os.getenv("LANGCHAIN_PROJECT", "trading-agent")
 
 # Whale data — Bybit (ccxt) + DefiLlama only, both free, no extra keys needed
 

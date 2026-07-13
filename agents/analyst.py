@@ -1,10 +1,10 @@
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
 from graph.state import TradingState
 from tools.indicators import get_all_indicators
 from prompts.analyst_prompt import build_analyst_prompt
-from config import LLM_MODEL, LLM_TEMPERATURE, SIGNAL_THRESHOLD, OPENAI_API_KEY, OPENAI_API_BASE
+from config import LLM_MODEL, LLM_TEMPERATURE, SIGNAL_THRESHOLD
 import json
 import re
 
@@ -31,12 +31,7 @@ def normalize_json_response(raw: str) -> str:
     return cleaned.strip()
 
 
-llm = ChatOpenAI(
-    model=LLM_MODEL,
-    temperature=LLM_TEMPERATURE,
-    api_key=OPENAI_API_KEY,
-    base_url=OPENAI_API_BASE,
-)
+llm = ChatOllama(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
 
 
 def analyst_node(state: TradingState) -> TradingState:

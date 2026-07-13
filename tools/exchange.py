@@ -9,6 +9,7 @@ _connected: bool = False
 
 
 def get_exchange() -> ccxt.bybit:
+<<<<<<< HEAD
     global _exchange, _connected
     if _exchange is not None:
         return _exchange
@@ -16,10 +17,14 @@ def get_exchange() -> ccxt.bybit:
     _exchange = ccxt.bybit({
         "apiKey": EXCHANGE_API_KEY,
         "secret": EXCHANGE_API_SECRET,
+=======
+    exchange = ccxt.bybit({
+>>>>>>> d0b86c9 (update local model)
         "enableRateLimit": True,
         "options": {"defaultType": "linear"},
     })
     if TESTNET:
+<<<<<<< HEAD
         _exchange.set_sandbox_mode(True)
     # Perform a quick permission check to detect unified-account permission issues.
     try:
@@ -41,6 +46,18 @@ def get_exchange() -> ccxt.bybit:
         else:
             print("[EXCHANGE] Connected to Bybit LIVE account")
     return _exchange
+=======
+        exchange.set_sandbox_mode(True)
+        print("[EXCHANGE] Connected to Bybit TESTNET (demo account)")
+    else:
+        print("[EXCHANGE] Connected to Bybit LIVE account")
+
+    # load markets using public endpoints only, then inject credentials
+    exchange.load_markets()
+    exchange.apiKey = EXCHANGE_API_KEY
+    exchange.secret = EXCHANGE_API_SECRET
+    return exchange
+>>>>>>> d0b86c9 (update local model)
 
 
 def fetch_ohlcv(symbol: str, timeframe: str = TIMEFRAME, limit: int = CANDLE_LIMIT) -> list:

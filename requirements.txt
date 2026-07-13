@@ -1,6 +1,11 @@
 # LangChain + LangGraph
 langchain==0.3.25
+<<<<<<< HEAD
 langchain-openai==0.3.18
+=======
+langchain-ollama==1.1.0
+langchain-core==0.3.60
+>>>>>>> d0b86c9 (update local model)
 langgraph==0.4.8
 langgraph-checkpoint-sqlite==2.0.10
 
