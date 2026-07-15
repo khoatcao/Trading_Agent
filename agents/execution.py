@@ -43,13 +43,14 @@ def execution_node(state: TradingState) -> TradingState:
             sl_trigger = 2 if direction == "LONG" else 1
             sl_order = create_order(
                 symbol=symbol,
-                order_type="stop_market",
+                order_type="market",
                 side=close_side,
                 amount=risk["position_size"],
                 params={
-                    "stopPrice": risk["stop_loss"],
+                    "triggerPrice": risk["stop_loss"],
                     "triggerDirection": sl_trigger,
                     "reduceOnly": True,
+                    "stopOrderType": "Stop",
                 },
             )
             print(f"[EXECUTION-DEBUG] sl_order response={sl_order}")
@@ -65,13 +66,14 @@ def execution_node(state: TradingState) -> TradingState:
             tp_trigger = 1 if direction == "LONG" else 2
             tp_order = create_order(
                 symbol=symbol,
-                order_type="take_profit_market",
+                order_type="market",
                 side=close_side,
                 amount=risk["position_size"],
                 params={
-                    "stopPrice": risk["take_profit"],
+                    "triggerPrice": risk["take_profit"],
                     "triggerDirection": tp_trigger,
                     "reduceOnly": True,
+                    "stopOrderType": "TakeProfit",
                 },
             )
 

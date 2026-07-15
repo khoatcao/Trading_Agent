@@ -9,7 +9,11 @@ EXCHANGE_API_KEY = os.getenv("EXCHANGE_API_KEY")
 EXCHANGE_API_SECRET = os.getenv("EXCHANGE_API_SECRET")
 
 # Trading
-SYMBOLS = ["DOGE/USDT:USDT"]
+SYMBOLS = [
+    "DOGE/USDT:USDT",
+    "XRP/USDT:USDT",
+    "ADA/USDT:USDT",
+]
 TIMEFRAME = os.getenv("TIMEFRAME", "15m")   # override with TIMEFRAME=1m for testing
 CANDLE_LIMIT = 200
 MONITOR_INTERVAL_SECONDS = int(os.getenv("MONITOR_INTERVAL_SECONDS", "120"))
@@ -17,8 +21,8 @@ MONITOR_INTERVAL_SECONDS = int(os.getenv("MONITOR_INTERVAL_SECONDS", "120"))
 # Risk
 MAX_LEVERAGE = 2
 MARGIN_MODE = "isolated"
-RISK_PER_TRADE = 0.0005      # 0.05% of balance per trade (reduced for small-balance testing)
-MAX_EXPOSURE = 0.20          # max 20% of portfolio in one position
+RISK_PER_TRADE = 0.01     # 0.05% of balance per trade (reduced for small-balance testing)
+MAX_EXPOSURE = 0.25          # max 20% of portfolio in one position
 MAX_DAILY_DRAWDOWN = 0.05    # halt if -5% on the day
 MIN_LIQ_DISTANCE = 0.15      # liquidation must be >15% away from entry
 SIGNAL_THRESHOLD = 0.6       # minimum score to take a trade
