@@ -24,13 +24,22 @@ def execution_node(state: TradingState) -> TradingState:
         set_margin_mode(symbol, risk["margin_mode"])
         set_leverage(symbol, risk["leverage"])
 
-        print(f"[EXECUTION-DEBUG] placing entry order symbol={symbol} side={side} amount={risk['position_size']}")
+        print(f"[EXECUTION-DEBUG] placing entry order symbol={symbol} side={side} amount={risk['position_size']} sl={risk['stop_loss']} tp={risk['take_profit']}")
         try:
             entry_order = create_order(
                 symbol=symbol,
                 order_type="market",
                 side=side,
                 amount=risk["position_size"],
+                params={
+                    "stopLoss": risk["stop_loss"],
+                    "takeProfit": risk["take_profit"],
+                    "slTriggerBy": "MarkPrice",
+                    "tpTriggerBy": "MarkPrice",
+                    "tpslMode": "Full",
+                    "slOrderType": "Market",
+                    "tpOrderType": "Market",
+                },
             )
             print(f"[EXECUTION-DEBUG] entry_order response={entry_order}")
         except Exception as e:
@@ -38,56 +47,10 @@ def execution_node(state: TradingState) -> TradingState:
             print(f"[EXECUTION-ERROR] entry_order failed for {symbol}: {e}")
             raise
 
-        print(f"[EXECUTION-DEBUG] placing SL order symbol={symbol} side={close_side} stop={risk['stop_loss']}")
-        try:
-            sl_trigger = 2 if direction == "LONG" else 1
-            sl_order = create_order(
-                symbol=symbol,
-                order_type="market",
-                side=close_side,
-                amount=risk["position_size"],
-                params={
-                    "triggerPrice": risk["stop_loss"],
-                    "triggerDirection": sl_trigger,
-                    "reduceOnly": True,
-                    "stopOrderType": "Stop",
-                },
-            )
-            print(f"[EXECUTION-DEBUG] sl_order response={sl_order}")
-
-        except Exception as e:
-            errors.append(f"execution:create_sl_order:{str(e)}")
-            print(f"[EXECUTION-ERROR] sl_order failed for {symbol}: {e}")
-            raise
-
-        print(f"[EXECUTION-DEBUG] placing TP order symbol={symbol} side={close_side} tp={risk['take_profit']}")
-        try:
-            
-            tp_trigger = 1 if direction == "LONG" else 2
-            tp_order = create_order(
-                symbol=symbol,
-                order_type="market",
-                side=close_side,
-                amount=risk["position_size"],
-                params={
-                    "triggerPrice": risk["take_profit"],
-                    "triggerDirection": tp_trigger,
-                    "reduceOnly": True,
-                    "stopOrderType": "TakeProfit",
-                },
-            )
-
-            
-            print(f"[EXECUTION-DEBUG] tp_order response={tp_order}")
-        except Exception as e:
-            errors.append(f"execution:create_tp_order:{str(e)}")
-            print(f"[EXECUTION-ERROR] tp_order failed for {symbol}: {e}")
-            raise
-
         order_result = {
             "order_id": entry_order["id"],
-            "sl_order_id": sl_order["id"],
-            "tp_order_id": tp_order["id"],
+            "sl_order_id": entry_order.get("info", {}).get("stopLoss"),
+            "tp_order_id": entry_order.get("info", {}).get("takeProfit"),
             "filled_price": entry_order.get("average") or risk["entry_price"],
             "status": "open",
             "timestamp": datetime.now(timezone.utc).isoformat(),
