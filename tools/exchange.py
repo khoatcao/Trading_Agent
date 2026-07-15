@@ -16,7 +16,7 @@ def get_exchange() -> ccxt.bybit:
     exchange.load_markets()
     exchange.apiKey = EXCHANGE_API_KEY
     exchange.secret = EXCHANGE_API_SECRET
-    exchange.verbose = True
+    exchange.verbose = False
     return exchange
 
 

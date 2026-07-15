@@ -20,41 +20,58 @@ from agents.supervisor import (
 def build_graph():
     builder = StateGraph(TradingState)
 
+    # Nodes
     builder.add_node("market_data", market_data_node)
     builder.add_node("analyst", analyst_node)
     builder.add_node("risk", risk_node)
     builder.add_node("execution", execution_node)
-    builder.add_node("close_position", close_position_node)
     builder.add_node("monitor", monitor_node)
+    builder.add_node("close_position", close_position_node)
 
+    # Entry
     builder.set_entry_point("market_data")
 
+    # Linear flow
     builder.add_edge("market_data", "analyst")
+    builder.add_edge("execution", "monitor")
 
+    # Analyst -> Risk / End
     builder.add_conditional_edges(
         "analyst",
         route_after_analyst,
-        {"risk": "risk", "end": END},
+        {
+            "risk": "risk",
+            "end": END,
+        },
     )
 
+    # Risk -> Execution / End
     builder.add_conditional_edges(
         "risk",
         route_after_risk,
-        {"execution": "execution", "end": END},
+        {
+            "execution": "execution",
+            "end": END,
+        },
     )
 
-    builder.add_edge("execution", "monitor")
-
+    # Monitor -> Close Position / End
     builder.add_conditional_edges(
         "monitor",
         route_after_monitor,
-        {"monitor": "monitor", "execution": "close_position"},
+        {
+            "close_position": "close_position",
+            "end": END,
+        },
     )
 
+    # Close Position -> End
     builder.add_edge("close_position", END)
 
+    # Checkpointer
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     checkpointer = SqliteSaver(conn)
+
     return builder.compile(checkpointer=checkpointer)
 
 

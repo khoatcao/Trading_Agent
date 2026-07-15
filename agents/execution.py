@@ -17,6 +17,8 @@ def execution_node(state: TradingState) -> TradingState:
     direction = signals["direction"]
     side = "buy" if direction == "LONG" else "sell"
     close_side = "sell" if direction == "LONG" else "buy"
+    sl_trigger = 2 if direction == "LONG" else 1
+    tp_trigger = 1 if direction == "LONG" else 2
 
     try:
         set_margin_mode(symbol, risk["margin_mode"])
@@ -38,6 +40,7 @@ def execution_node(state: TradingState) -> TradingState:
 
         print(f"[EXECUTION-DEBUG] placing SL order symbol={symbol} side={close_side} stop={risk['stop_loss']}")
         try:
+            sl_trigger = 2 if direction == "LONG" else 1
             sl_order = create_order(
                 symbol=symbol,
                 order_type="stop_market",
@@ -45,11 +48,12 @@ def execution_node(state: TradingState) -> TradingState:
                 amount=risk["position_size"],
                 params={
                     "stopPrice": risk["stop_loss"],
+                    "triggerDirection": sl_trigger,
                     "reduceOnly": True,
-                    "positionIdx": 1,
                 },
             )
             print(f"[EXECUTION-DEBUG] sl_order response={sl_order}")
+
         except Exception as e:
             errors.append(f"execution:create_sl_order:{str(e)}")
             print(f"[EXECUTION-ERROR] sl_order failed for {symbol}: {e}")
@@ -57,6 +61,8 @@ def execution_node(state: TradingState) -> TradingState:
 
         print(f"[EXECUTION-DEBUG] placing TP order symbol={symbol} side={close_side} tp={risk['take_profit']}")
         try:
+            
+            tp_trigger = 1 if direction == "LONG" else 2
             tp_order = create_order(
                 symbol=symbol,
                 order_type="take_profit_market",
@@ -64,10 +70,12 @@ def execution_node(state: TradingState) -> TradingState:
                 amount=risk["position_size"],
                 params={
                     "stopPrice": risk["take_profit"],
+                    "triggerDirection": tp_trigger,
                     "reduceOnly": True,
-                    "positionIdx": 1,
                 },
             )
+
+            
             print(f"[EXECUTION-DEBUG] tp_order response={tp_order}")
         except Exception as e:
             errors.append(f"execution:create_tp_order:{str(e)}")
@@ -124,6 +132,9 @@ def close_position_node(state: TradingState) -> TradingState:
 
     direction = signals["direction"]
     close_side = "sell" if direction == "LONG" else "buy"
+
+    sl_trigger = 2 if direction == "LONG" else 1
+    tp_trigger = 1 if direction == "LONG" else 2
 
     try:
         positions = fetch_positions(symbol)
