@@ -4,6 +4,7 @@ from tools.exchange import (
     fetch_open_interest, fetch_order_book
 )
 from tools.whale_data import fetch_all_whale_data
+from notifications.alert import send_alert
 
 
 def market_data_node(state: TradingState) -> TradingState:
@@ -20,6 +21,12 @@ def market_data_node(state: TradingState) -> TradingState:
         err = f"market_data:ohlcv:{type(e).__name__}:{e}"
         print(f"[MARKET_DATA] symbol={symbol} ohlcv error={err}")
         errors.append(err)
+        send_alert(
+            f"🔴 *MARKET DATA ERROR*\n"
+            f"Symbol: `{symbol}`\n"
+            f"Failed to fetch OHLCV (candle data) — cycle skipped\n"
+            f"Error: `{type(e).__name__}: {e}`"
+        )
 
     try:
         ticker = fetch_ticker(symbol)

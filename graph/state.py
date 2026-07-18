@@ -31,6 +31,8 @@ class TradingState(TypedDict):
     # monitor decision (filled by monitor agent)
     monitor_action: str
     # values: HOLD | CLOSE | REDUCE
+    close_reason: str
+    # human-readable reason for closing: "Stop Loss Hit", "Take Profit Hit", etc.
 
     # agent messages / reasoning trace
     messages: Annotated[list, add_messages]

@@ -3,6 +3,7 @@ from langchain_core.messages import HumanMessage
 
 from graph.state import TradingState
 from prompts.supervisor_prompt import build_supervisor_prompt
+from notifications.alert import send_alert
 from config import LLM_MODEL, LLM_TEMPERATURE, SIGNAL_THRESHOLD
 
 
@@ -16,8 +17,19 @@ def route_after_analyst(state: TradingState) -> str:
     signals = state.get("signals", {})
     score = abs(float(signals.get("score", 0.0)))
     direction = signals.get("direction", "NONE")
+    symbol = state.get("symbol", "UNKNOWN")
 
     route = "end" if direction == "NONE" or score < SIGNAL_THRESHOLD else "risk"
+
+    if route == "end":
+        reason = signals.get("reason", "")
+        send_alert(
+            f"⏭️ *SIGNAL SKIPPED*\n"
+            f"Symbol: `{symbol}`\n"
+            f"Direction: `{direction}` | Score: `{signals.get('score', 0.0)}`\n"
+            f"Threshold: `{SIGNAL_THRESHOLD}` (need |score| ≥ {SIGNAL_THRESHOLD})\n"
+            f"Reason: {reason[:300]}"
+        )
 
     print(
         f"[SUPERVISOR] route_after_analyst -> {route} "
@@ -29,8 +41,20 @@ def route_after_analyst(state: TradingState) -> str:
 def route_after_risk(state: TradingState) -> str:
     risk = state.get("risk", {})
     approved = bool(risk.get("approved", False))
+    symbol = state.get("symbol", "UNKNOWN")
 
     route = "execution" if approved else "end"
+
+    if not approved:
+        checks = risk.get("checks", {})
+        failed = [k for k, v in checks.items() if not v]
+        send_alert(
+            f"🚫 *RISK REJECTED*\n"
+            f"Symbol: `{symbol}`\n"
+            f"Direction: `{state.get('signals', {}).get('direction', 'N/A')}`\n"
+            f"Failed checks: `{', '.join(failed) if failed else 'unknown'}`\n"
+            f"Assessment: {risk.get('reason', '')[:300]}"
+        )
 
     print(f"[SUPERVISOR] route_after_risk -> {route} (approved={approved})")
     return route

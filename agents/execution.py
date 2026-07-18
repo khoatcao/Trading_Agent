@@ -58,14 +58,16 @@ def execution_node(state: TradingState) -> TradingState:
         print(f"[EXECUTION] symbol={symbol} order_id={order_result['order_id']} side={side} amount={risk['position_size']} status={order_result['status']}")
 
         send_alert(
-            f"TRADE OPENED\n"
-            f"Symbol: {symbol}\n"
-            f"Direction: {direction}\n"
-            f"Entry: {order_result['filled_price']}\n"
-            f"Size: {risk['position_size']}\n"
-            f"Leverage: {risk['leverage']}x\n"
-            f"SL: {risk['stop_loss']}  TP: {risk['take_profit']}\n"
-            f"Liq: {risk['liq_price']}"
+            f"✅ *TRADE OPENED*\n"
+            f"Symbol: `{symbol}`\n"
+            f"Direction: *{direction}*\n"
+            f"Entry: `{order_result['filled_price']}`\n"
+            f"Size: `{risk['position_size']}`\n"
+            f"Leverage: `{risk['leverage']}x` | Margin: `{risk['margin_mode']}`\n"
+            f"Stop Loss: `{risk['stop_loss']}`\n"
+            f"Take Profit: `{risk['take_profit']}`\n"
+            f"Liquidation: `{risk['liq_price']}` ({round(risk['liq_distance_pct'] * 100, 1)}% away)\n"
+            f"Score: `{state['signals'].get('score', 'N/A')}` | Confidence: `{state['signals'].get('confidence', 'N/A')}`"
         )
 
         log_trade({
@@ -117,12 +119,18 @@ def close_position_node(state: TradingState) -> TradingState:
             params={"reduceOnly": True},
         )
 
-        pnl = position.get("unrealizedPnl", 0)
+        pnl = float(position.get("unrealizedPnl", 0))
+        close_price = close_order.get("average") or position.get("markPrice", "N/A")
+        entry_price = position.get("entryPrice", state.get("risk", {}).get("entry_price", "N/A"))
+        close_reason = state.get("close_reason") or state.get("monitor_action", "CLOSE")
+        pnl_emoji = "🟢" if pnl >= 0 else "🔴"
         send_alert(
-            f"TRADE CLOSED\n"
-            f"Symbol: {symbol}\n"
-            f"Reason: {state.get('monitor_action', 'CLOSE')}\n"
-            f"PnL: {pnl}"
+            f"{pnl_emoji} *TRADE CLOSED*\n"
+            f"Symbol: `{symbol}`\n"
+            f"Direction: *{direction}*\n"
+            f"Reason: {close_reason}\n"
+            f"Entry: `{entry_price}` → Close: `{close_price}`\n"
+            f"PnL: `{round(pnl, 4)} USDT`"
         )
 
         log_trade({
