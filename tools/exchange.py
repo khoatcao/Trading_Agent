@@ -85,6 +85,24 @@ def create_order(symbol: str, order_type: str, side: str, amount: float, price: 
     return exchange.create_order(symbol, order_type, side, amount, price, params)
 
 
+def set_trading_stop(symbol: str, stop_loss: float, take_profit: float) -> dict:
+    exchange = get_exchange()
+    market = exchange.market(symbol)
+    bybit_symbol = market["id"]  # e.g. DOGE/USDT:USDT → DOGEUSDT
+    return exchange.private_post_v5_position_trading_stop({
+        "category": "linear",
+        "symbol": bybit_symbol,
+        "stopLoss": str(stop_loss),
+        "takeProfit": str(take_profit),
+        "slTriggerBy": "MarkPrice",
+        "tpTriggerBy": "MarkPrice",
+        "tpslMode": "Full",
+        "slOrderType": "Market",
+        "tpOrderType": "Market",
+        "positionIdx": 0,
+    })
+
+
 def cancel_order(order_id: str, symbol: str) -> dict:
     exchange = get_exchange()
     return exchange.cancel_order(order_id, symbol)

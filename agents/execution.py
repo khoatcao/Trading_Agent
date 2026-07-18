@@ -1,7 +1,9 @@
 from graph.state import TradingState
 from tools.exchange import (
-    set_leverage, set_margin_mode, create_order, cancel_order, fetch_positions
+    set_leverage, set_margin_mode, create_order, cancel_order,
+    fetch_positions, set_trading_stop
 )
+from tools.risk_calc import calculate_stop_loss, calculate_take_profit
 from notifications.alert import send_alert
 from memory.trade_log import log_trade
 from datetime import datetime, timezone
@@ -24,22 +26,14 @@ def execution_node(state: TradingState) -> TradingState:
         set_margin_mode(symbol, risk["margin_mode"])
         set_leverage(symbol, risk["leverage"])
 
-        print(f"[EXECUTION-DEBUG] placing entry order symbol={symbol} side={side} amount={risk['position_size']} sl={risk['stop_loss']} tp={risk['take_profit']}")
+        # Step 1: place market order with no SL/TP attached
+        print(f"[EXECUTION-DEBUG] placing entry order symbol={symbol} side={side} amount={risk['position_size']}")
         try:
             entry_order = create_order(
                 symbol=symbol,
                 order_type="market",
                 side=side,
                 amount=risk["position_size"],
-                params={
-                    "stopLoss": risk["stop_loss"],
-                    "takeProfit": risk["take_profit"],
-                    "slTriggerBy": "MarkPrice",
-                    "tpTriggerBy": "MarkPrice",
-                    "tpslMode": "Full",
-                    "slOrderType": "Market",
-                    "tpOrderType": "Market",
-                },
             )
             print(f"[EXECUTION-DEBUG] entry_order response={entry_order}")
         except Exception as e:
@@ -47,25 +41,48 @@ def execution_node(state: TradingState) -> TradingState:
             print(f"[EXECUTION-ERROR] entry_order failed for {symbol}: {e}")
             raise
 
+        # Step 2: get actual fill price from the order response
+        fill_price = float(entry_order.get("average") or entry_order.get("price") or risk["entry_price"])
+
+        # Step 3: recalculate SL/TP from actual fill price (not stale mark price)
+        actual_stop_loss = calculate_stop_loss(fill_price, direction)
+        actual_take_profit = calculate_take_profit(fill_price, direction)
+        print(f"[EXECUTION-DEBUG] fill={fill_price} actual_sl={actual_stop_loss} actual_tp={actual_take_profit} (stale_sl={risk['stop_loss']} stale_tp={risk['take_profit']})")
+
+        # Step 4: set SL/TP on the open position
+        try:
+            set_trading_stop(symbol, actual_stop_loss, actual_take_profit)
+            print(f"[EXECUTION-DEBUG] trading stop set sl={actual_stop_loss} tp={actual_take_profit}")
+        except Exception as e:
+            errors.append(f"execution:set_trading_stop:{str(e)}")
+            print(f"[EXECUTION-ERROR] set_trading_stop failed for {symbol}: {e}")
+
         order_result = {
             "order_id": entry_order["id"],
-            "sl_order_id": entry_order.get("info", {}).get("stopLoss"),
-            "tp_order_id": entry_order.get("info", {}).get("takeProfit"),
-            "filled_price": entry_order.get("average") or risk["entry_price"],
+            "filled_price": fill_price,
             "status": "open",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
-        print(f"[EXECUTION] symbol={symbol} order_id={order_result['order_id']} side={side} amount={risk['position_size']} status={order_result['status']}")
+
+        # update risk with actual fill-based SL/TP so monitor uses correct values
+        updated_risk = {
+            **risk,
+            "entry_price": fill_price,
+            "stop_loss": actual_stop_loss,
+            "take_profit": actual_take_profit,
+        }
+
+        print(f"[EXECUTION] symbol={symbol} order_id={order_result['order_id']} side={side} amount={risk['position_size']} fill={fill_price} sl={actual_stop_loss} tp={actual_take_profit}")
 
         send_alert(
             f"✅ *TRADE OPENED*\n"
             f"Symbol: `{symbol}`\n"
             f"Direction: *{direction}*\n"
-            f"Entry: `{order_result['filled_price']}`\n"
+            f"Entry: `{fill_price}`\n"
             f"Size: `{risk['position_size']}`\n"
             f"Leverage: `{risk['leverage']}x` | Margin: `{risk['margin_mode']}`\n"
-            f"Stop Loss: `{risk['stop_loss']}`\n"
-            f"Take Profit: `{risk['take_profit']}`\n"
+            f"Stop Loss: `{actual_stop_loss}`\n"
+            f"Take Profit: `{actual_take_profit}`\n"
             f"Liquidation: `{risk['liq_price']}` ({round(risk['liq_distance_pct'] * 100, 1)}% away)\n"
             f"Score: `{state['signals'].get('score', 'N/A')}` | Confidence: `{state['signals'].get('confidence', 'N/A')}`"
         )
@@ -73,11 +90,11 @@ def execution_node(state: TradingState) -> TradingState:
         log_trade({
             "symbol": symbol,
             "direction": direction,
-            "entry_price": order_result["filled_price"],
+            "entry_price": fill_price,
             "position_size": risk["position_size"],
             "leverage": risk["leverage"],
-            "stop_loss": risk["stop_loss"],
-            "take_profit": risk["take_profit"],
+            "stop_loss": actual_stop_loss,
+            "take_profit": actual_take_profit,
             "liq_price": risk["liq_price"],
             "status": "open",
             "timestamp": order_result["timestamp"],
@@ -86,9 +103,10 @@ def execution_node(state: TradingState) -> TradingState:
     except Exception as e:
         errors.append(f"execution:{str(e)}")
         order_result = {"status": "failed", "reason": str(e)}
+        updated_risk = risk
         print(f"[EXECUTION-ERROR] execution failed for {symbol}: {e}")
 
-    return {**state, "order_result": order_result, "errors": errors}
+    return {**state, "order_result": order_result, "risk": updated_risk, "errors": errors}
 
 
 def close_position_node(state: TradingState) -> TradingState:
