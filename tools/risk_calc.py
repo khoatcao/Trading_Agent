@@ -1,7 +1,7 @@
 from config import (
     MAX_LEVERAGE, MARGIN_MODE, RISK_PER_TRADE,
     MAX_EXPOSURE, MIN_LIQ_DISTANCE, MAX_DAILY_DRAWDOWN,
-    STOP_LOSS_PCT, TAKE_PROFIT_PCT
+    STOP_LOSS_PCT, TAKE_PROFIT_PCT, MIN_NOTIONAL_USDT
 )
 
 
@@ -67,6 +67,7 @@ def validate_risk(entry: float, leverage: int, direction: str,
         "leverage_ok": leverage <= MAX_LEVERAGE,
         "exposure_ok": check_exposure(position_value, balance),
         "drawdown_ok": check_daily_drawdown(starting_balance, current_balance),
+        "notional_ok": position_value >= MIN_NOTIONAL_USDT,
     }
     approved = all(checks.values())
 

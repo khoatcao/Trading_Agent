@@ -5,19 +5,20 @@ from config import (
 )
 
 _exchange: ccxt.bybit | None = None
-_connected: bool = False
 
 
 def get_exchange() -> ccxt.bybit:
-    exchange = ccxt.bybit({
-        "enableRateLimit": True,
-        "options": {"defaultType": "linear", "fetchCurrencies": False},
-    })
-    exchange.load_markets()
-    exchange.apiKey = EXCHANGE_API_KEY
-    exchange.secret = EXCHANGE_API_SECRET
-    exchange.verbose = False
-    return exchange
+    global _exchange
+    if _exchange is None:
+        _exchange = ccxt.bybit({
+            "apiKey": EXCHANGE_API_KEY,
+            "secret": EXCHANGE_API_SECRET,
+            "enableRateLimit": True,
+            "options": {"defaultType": "linear", "fetchCurrencies": False},
+        })
+        _exchange.load_markets()
+        print("[EXCHANGE] Connected to Bybit — markets loaded once")
+    return _exchange
 
 
 def fetch_all_usdt_perpetuals(min_volume_usdt: float = 5_000_000, max_symbols: int = 50) -> list:
@@ -75,7 +76,22 @@ def fetch_balance() -> dict:
 def fetch_positions(symbol: str) -> list:
     exchange = get_exchange()
     positions = exchange.fetch_positions([symbol])
-    return [p for p in positions if float(p["contracts"]) > 0]
+    return [p for p in positions if float(p.get("contracts", 0)) > 0]
+
+
+def fetch_all_positions() -> list:
+    exchange = get_exchange()
+    positions = exchange.fetch_positions()
+    return [p for p in positions if float(p.get("contracts", 0)) > 0]
+
+
+def cancel_all_conditional_orders(symbol: str) -> None:
+    exchange = get_exchange()
+    try:
+        exchange.cancel_all_orders(symbol, params={"orderFilter": "StopOrder"})
+        print(f"[EXCHANGE] Cancelled all conditional orders for {symbol}")
+    except Exception as e:
+        print(f"[EXCHANGE] cancel_all_conditional_orders failed for {symbol}: {e}")
 
 
 def set_leverage(symbol: str, leverage: int) -> dict:

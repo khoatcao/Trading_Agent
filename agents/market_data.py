@@ -24,9 +24,10 @@ def market_data_node(state: TradingState) -> TradingState:
         send_alert(
             f"🔴 *MARKET DATA ERROR*\n"
             f"Symbol: `{symbol}`\n"
-            f"Failed to fetch OHLCV (candle data) — cycle skipped\n"
+            f"Failed to fetch OHLCV — cycle skipped\n"
             f"Error: `{type(e).__name__}: {e}`"
         )
+        return {**state, "market_data": market_data, "errors": errors}
 
     try:
         ticker = fetch_ticker(symbol)

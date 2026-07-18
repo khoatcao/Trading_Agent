@@ -31,16 +31,6 @@ def route_after_analyst(state: TradingState) -> str:
 
     route = "end" if direction == "NONE" or score < SIGNAL_THRESHOLD else "risk"
 
-    if route == "end":
-        reason = signals.get("reason", "")
-        send_alert(
-            f"⏭️ *SIGNAL SKIPPED*\n"
-            f"Symbol: `{symbol}`\n"
-            f"Direction: `{direction}` | Score: `{signals.get('score', 0.0)}`\n"
-            f"Threshold: `{SIGNAL_THRESHOLD}` (need |score| ≥ {SIGNAL_THRESHOLD})\n"
-            f"Reason: {reason[:300]}"
-        )
-
     print(
         f"[SUPERVISOR] route_after_analyst -> {route} "
         f"(direction={direction}, score={score})"

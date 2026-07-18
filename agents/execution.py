@@ -1,7 +1,7 @@
 from graph.state import TradingState
 from tools.exchange import (
     set_leverage, set_margin_mode, create_order, cancel_order,
-    fetch_positions, set_trading_stop
+    fetch_positions, set_trading_stop, cancel_all_conditional_orders
 )
 from tools.risk_calc import calculate_stop_loss, calculate_take_profit
 from notifications.alert import send_alert
@@ -49,13 +49,26 @@ def execution_node(state: TradingState) -> TradingState:
         actual_take_profit = calculate_take_profit(fill_price, direction)
         print(f"[EXECUTION-DEBUG] fill={fill_price} actual_sl={actual_stop_loss} actual_tp={actual_take_profit} (stale_sl={risk['stop_loss']} stale_tp={risk['take_profit']})")
 
-        # Step 4: set SL/TP on the open position
+        # Step 4: set SL/TP on the open position — fatal if fails
         try:
             set_trading_stop(symbol, actual_stop_loss, actual_take_profit)
             print(f"[EXECUTION-DEBUG] trading stop set sl={actual_stop_loss} tp={actual_take_profit}")
         except Exception as e:
             errors.append(f"execution:set_trading_stop:{str(e)}")
-            print(f"[EXECUTION-ERROR] set_trading_stop failed for {symbol}: {e}")
+            print(f"[EXECUTION-CRITICAL] set_trading_stop failed for {symbol}: {e}")
+            send_alert(
+                f"🚨 *CRITICAL — UNPROTECTED POSITION*\n"
+                f"Symbol: `{symbol}`\n"
+                f"SL/TP could not be set: `{e}`\n"
+                f"Attempting emergency close!"
+            )
+            try:
+                create_order(symbol, "market", "sell" if direction == "LONG" else "buy",
+                             risk["position_size"], params={"reduceOnly": True})
+                send_alert(f"✅ Emergency close successful for `{symbol}`")
+            except Exception as close_e:
+                send_alert(f"🚨 *EMERGENCY CLOSE FAILED* for `{symbol}`: `{close_e}` — MANUAL ACTION REQUIRED")
+            raise
 
         order_result = {
             "order_id": entry_order["id"],
@@ -129,6 +142,9 @@ def close_position_node(state: TradingState) -> TradingState:
         position = positions[0]
         size = float(position["contracts"])
 
+        # cancel existing SL/TP conditional orders before closing
+        cancel_all_conditional_orders(symbol)
+
         close_order = create_order(
             symbol=symbol,
             order_type="market",
@@ -137,7 +153,12 @@ def close_position_node(state: TradingState) -> TradingState:
             params={"reduceOnly": True},
         )
 
-        pnl = float(position.get("unrealizedPnl", 0))
+        # use realized PnL from close order, fall back to unrealized
+        pnl = float(
+            close_order.get("info", {}).get("cumRealisedPnl") or
+            close_order.get("info", {}).get("realizedPnl") or
+            position.get("unrealizedPnl", 0)
+        )
         close_price = close_order.get("average") or position.get("markPrice", "N/A")
         entry_price = position.get("entryPrice", state.get("risk", {}).get("entry_price", "N/A"))
         close_reason = state.get("close_reason") or state.get("monitor_action", "CLOSE")
@@ -157,7 +178,7 @@ def close_position_node(state: TradingState) -> TradingState:
             "status": "closed",
             "close_price": close_order.get("average"),
             "pnl": pnl,
-            "reason": state.get("monitor_action", "CLOSE"),
+            "reason": close_reason,
         })
 
     except Exception as e:

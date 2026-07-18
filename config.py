@@ -28,6 +28,8 @@ MIN_LIQ_DISTANCE = 0.15      # liquidation must be >15% away from entry
 SIGNAL_THRESHOLD = 0.6       # minimum score to take a trade
 STOP_LOSS_PCT = 0.03         # 3% stop loss from entry
 TAKE_PROFIT_PCT = 0.09       # 9% take profit from entry (1:3 R:R)
+MAX_POSITIONS = 3            # max concurrent open positions across all pairs
+MIN_NOTIONAL_USDT = 11.0     # minimum order size in USDT (Bybit min is $10, +$1 buffer)
 
 # LLM (local Ollama — no API key needed)
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen2.5:7b")

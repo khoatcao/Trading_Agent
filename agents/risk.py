@@ -6,9 +6,10 @@ from tools.risk_calc import (
     calculate_stop_loss, calculate_take_profit,
     calculate_position_size, validate_risk
 )
-from tools.exchange import fetch_balance
+from tools.exchange import fetch_balance, fetch_all_positions
+from memory.trade_log import get_daily_starting_balance, save_daily_starting_balance
 from prompts.risk_prompt import build_risk_prompt
-from config import LLM_MODEL, LLM_TEMPERATURE, MAX_LEVERAGE, MARGIN_MODE
+from config import LLM_MODEL, LLM_TEMPERATURE, MAX_LEVERAGE, MARGIN_MODE, MAX_POSITIONS
 import json
 
 
@@ -30,6 +31,23 @@ def risk_node(state: TradingState) -> TradingState:
         balance = float(balance_data["USDT"]["free"])
         equity = float(balance_data["USDT"]["total"])
 
+        # check max concurrent positions
+        open_positions = fetch_all_positions()
+        if len(open_positions) >= MAX_POSITIONS:
+            risk = {
+                "approved": False,
+                "checks": {"max_positions_ok": False},
+                "reason": f"Max concurrent positions ({MAX_POSITIONS}) already open — skipping new trade.",
+            }
+            print(f"[RISK] symbol={state.get('symbol')} rejected — max positions reached ({len(open_positions)}/{MAX_POSITIONS})")
+            return {**state, "risk": risk, "errors": errors}
+
+        # get or save today's starting balance for drawdown check
+        starting_balance = get_daily_starting_balance()
+        if starting_balance is None:
+            starting_balance = equity
+            save_daily_starting_balance(equity)
+
         stop_loss = calculate_stop_loss(entry, direction)
         take_profit = calculate_take_profit(entry, direction)
         leverage = min(MAX_LEVERAGE, 5)
@@ -42,7 +60,7 @@ def risk_node(state: TradingState) -> TradingState:
             direction=direction,
             position_size=position_size,
             balance=balance,
-            starting_balance=equity,
+            starting_balance=starting_balance,
             current_balance=equity,
         )
 

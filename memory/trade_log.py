@@ -5,6 +5,7 @@ from config import DB_PATH
 
 def _get_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS trades (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,8 +24,36 @@ def _get_connection() -> sqlite3.Connection:
             timestamp   TEXT
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS daily_balance (
+            date              TEXT PRIMARY KEY,
+            starting_balance  REAL
+        )
+    """)
     conn.commit()
     return conn
+
+
+def save_daily_starting_balance(balance: float):
+    conn = _get_connection()
+    today = datetime.now(timezone.utc).date().isoformat()
+    conn.execute(
+        "INSERT OR IGNORE INTO daily_balance (date, starting_balance) VALUES (?, ?)",
+        (today, balance)
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_daily_starting_balance() -> float | None:
+    conn = _get_connection()
+    today = datetime.now(timezone.utc).date().isoformat()
+    cursor = conn.execute(
+        "SELECT starting_balance FROM daily_balance WHERE date = ?", (today,)
+    )
+    row = cursor.fetchone()
+    conn.close()
+    return float(row[0]) if row else None
 
 
 def log_trade(trade: dict):
