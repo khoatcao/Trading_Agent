@@ -1,6 +1,7 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 from graph.graph import graph
 from tools.exchange import fetch_all_usdt_perpetuals
+from notifications.report import send_daily_report, send_weekly_report, send_monthly_report
 from config import TIMEFRAME, MIN_VOLUME_USDT, MAX_SYMBOLS, SYMBOL_REFRESH_HOURS
 import uuid
 
@@ -80,8 +81,35 @@ def main():
         id="symbol_refresh",
     )
 
+    # daily report — every day at 00:00 UTC
+    scheduler.add_job(
+        send_daily_report,
+        trigger="cron",
+        hour=0, minute=0,
+        id="daily_report",
+    )
+
+    # weekly report — every Monday at 00:00 UTC
+    scheduler.add_job(
+        send_weekly_report,
+        trigger="cron",
+        day_of_week="mon",
+        hour=0, minute=0,
+        id="weekly_report",
+    )
+
+    # monthly report — 1st of each month at 00:00 UTC
+    scheduler.add_job(
+        send_monthly_report,
+        trigger="cron",
+        day=1,
+        hour=0, minute=0,
+        id="monthly_report",
+    )
+
     print(f"[SCHEDULER] Scanning {len(_active_symbols)} pairs every 1 minute")
     print(f"[SCHEDULER] Symbol list refreshes every {SYMBOL_REFRESH_HOURS} hour(s)")
+    print(f"[SCHEDULER] Reports: daily at 00:00 UTC | weekly Monday | monthly 1st")
     print("[SCHEDULER] Press Ctrl+C to stop")
 
     try:
