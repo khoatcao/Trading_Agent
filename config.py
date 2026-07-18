@@ -26,6 +26,8 @@ MAX_EXPOSURE = 2.0           # allow full balance × leverage to meet $10 Bybit 
 MAX_DAILY_DRAWDOWN = 0.05    # halt if -5% on the day
 MIN_LIQ_DISTANCE = 0.15      # liquidation must be >15% away from entry
 SIGNAL_THRESHOLD = 0.6       # minimum score to take a trade
+STOP_LOSS_PCT = 0.03         # 3% stop loss from entry
+TAKE_PROFIT_PCT = 0.09       # 9% take profit from entry (1:3 R:R)
 
 # LLM (local Ollama — no API key needed)
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen2.5:7b")

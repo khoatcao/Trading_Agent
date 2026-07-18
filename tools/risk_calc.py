@@ -1,6 +1,7 @@
 from config import (
     MAX_LEVERAGE, MARGIN_MODE, RISK_PER_TRADE,
-    MAX_EXPOSURE, MIN_LIQ_DISTANCE, MAX_DAILY_DRAWDOWN
+    MAX_EXPOSURE, MIN_LIQ_DISTANCE, MAX_DAILY_DRAWDOWN,
+    STOP_LOSS_PCT, TAKE_PROFIT_PCT
 )
 
 
@@ -27,14 +28,14 @@ def calculate_position_size(balance: float, entry: float, stop_loss: float, risk
     return round(position_size, 6)
 
 
-def calculate_stop_loss(entry: float, direction: str, pct: float = 0.03) -> float:
+def calculate_stop_loss(entry: float, direction: str, pct: float = STOP_LOSS_PCT) -> float:
     if direction == "LONG":
         return round(entry * (1 - pct), 4)
     else:
         return round(entry * (1 + pct), 4)
 
 
-def calculate_take_profit(entry: float, direction: str, pct: float = 0.05) -> float:
+def calculate_take_profit(entry: float, direction: str, pct: float = TAKE_PROFIT_PCT) -> float:
     if direction == "LONG":
         return round(entry * (1 + pct), 4)
     else:
