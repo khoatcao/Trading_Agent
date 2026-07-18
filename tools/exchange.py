@@ -20,6 +20,28 @@ def get_exchange() -> ccxt.bybit:
     return exchange
 
 
+def fetch_all_usdt_perpetuals(min_volume_usdt: float = 5_000_000, max_symbols: int = 50) -> list:
+    exchange = get_exchange()
+    tickers = exchange.fetch_tickers()
+
+    pairs = []
+    for symbol, ticker in tickers.items():
+        market = exchange.markets.get(symbol, {})
+        if not market.get("linear") or not market.get("swap"):
+            continue
+        if not symbol.endswith("/USDT:USDT"):
+            continue
+        quote_volume = float(ticker.get("quoteVolume") or 0)
+        if quote_volume < min_volume_usdt:
+            continue
+        pairs.append((symbol, quote_volume))
+
+    pairs.sort(key=lambda x: x[1], reverse=True)
+    result = [s for s, _ in pairs[:max_symbols]]
+    print(f"[SCANNER] Found {len(result)} USDT perpetuals with >{min_volume_usdt/1_000_000:.0f}M volume")
+    return result
+
+
 def fetch_ohlcv(symbol: str, timeframe: str = TIMEFRAME, limit: int = CANDLE_LIMIT) -> list:
     exchange = get_exchange()
     return exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)

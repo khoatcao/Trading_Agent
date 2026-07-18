@@ -1,7 +1,23 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 from graph.graph import graph
-from config import SYMBOLS, TIMEFRAME
+from tools.exchange import fetch_all_usdt_perpetuals
+from config import TIMEFRAME, MIN_VOLUME_USDT, MAX_SYMBOLS, SYMBOL_REFRESH_HOURS
 import uuid
+
+_active_symbols: list = []
+
+
+def refresh_symbols():
+    global _active_symbols
+    try:
+        symbols = fetch_all_usdt_perpetuals(
+            min_volume_usdt=MIN_VOLUME_USDT,
+            max_symbols=MAX_SYMBOLS,
+        )
+        _active_symbols = symbols
+        print(f"[SCANNER] Active symbols updated: {len(_active_symbols)} pairs")
+    except Exception as e:
+        print(f"[SCANNER] Failed to refresh symbols: {e}")
 
 
 def run_trading_cycle(symbol: str):
@@ -30,23 +46,42 @@ def run_trading_cycle(symbol: str):
     print(f"[CYCLE END] {symbol}")
 
 
+def run_all_symbols():
+    if not _active_symbols:
+        print("[SCHEDULER] No symbols loaded yet — skipping cycle")
+        return
+    for symbol in _active_symbols:
+        try:
+            run_trading_cycle(symbol)
+        except Exception as e:
+            print(f"[SCHEDULER] Error in cycle for {symbol}: {e}")
+
+
 def main():
+    print("[SCANNER] Fetching active USDT perpetuals from Bybit...")
+    refresh_symbols()
+
     scheduler = BlockingScheduler()
 
-    for symbol in SYMBOLS:
-        scheduler.add_job(
-            run_trading_cycle,
-            trigger="interval",
-            minutes=1,
-            args=[symbol],
-            id=f"trading_{symbol.replace('/', '_')}",
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=30,
-        )
+    scheduler.add_job(
+        run_all_symbols,
+        trigger="interval",
+        minutes=1,
+        id="trading_all_symbols",
+        max_instances=1,
+        coalesce=True,
+        misfire_grace_time=30,
+    )
 
-    print(f"[SCHEDULER] Running for symbols: {SYMBOLS} every 1 minute")
-    print(f"[SCHEDULER] Active trading symbols: {', '.join(SYMBOLS)}")
+    scheduler.add_job(
+        refresh_symbols,
+        trigger="interval",
+        hours=SYMBOL_REFRESH_HOURS,
+        id="symbol_refresh",
+    )
+
+    print(f"[SCHEDULER] Scanning {len(_active_symbols)} pairs every 1 minute")
+    print(f"[SCHEDULER] Symbol list refreshes every {SYMBOL_REFRESH_HOURS} hour(s)")
     print("[SCHEDULER] Press Ctrl+C to stop")
 
     try:

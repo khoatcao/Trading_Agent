@@ -9,21 +9,14 @@ EXCHANGE_API_KEY = os.getenv("EXCHANGE_API_KEY")
 EXCHANGE_API_SECRET = os.getenv("EXCHANGE_API_SECRET")
 
 # Trading
-SYMBOLS = [
-    "DOGE/USDT:USDT",
-    "XRP/USDT:USDT",
-    "ADA/USDT:USDT",
-    "TRX/USDT:USDT",
-    "MATIC/USDT:USDT",
-    "DOT/USDT:USDT",
-    "LINK/USDT:USDT",
-    "LTC/USDT:USDT",
-    "ATOM/USDT:USDT",
-    "AVAX/USDT:USDT",
-]
 TIMEFRAME = os.getenv("TIMEFRAME", "15m")   # override with TIMEFRAME=1m for testing
 CANDLE_LIMIT = 200
 MONITOR_INTERVAL_SECONDS = int(os.getenv("MONITOR_INTERVAL_SECONDS", "120"))
+
+# Market scanner — dynamically fetch all liquid USDT perpetuals from Bybit
+MIN_VOLUME_USDT = float(os.getenv("MIN_VOLUME_USDT", "5000000"))   # min 5M USDT 24h volume
+MAX_SYMBOLS = int(os.getenv("MAX_SYMBOLS", "50"))                   # cap at top 50 by volume
+SYMBOL_REFRESH_HOURS = int(os.getenv("SYMBOL_REFRESH_HOURS", "1")) # re-scan market every 1 hour
 
 # Risk
 MAX_LEVERAGE = 2
