@@ -13,6 +13,16 @@ llm = ChatOllama(
 )
 
 
+def route_after_market_data(state: TradingState) -> str:
+    open_position = state.get("market_data", {}).get("open_position")
+    symbol = state.get("symbol", "UNKNOWN")
+    if open_position:
+        print(f"[SUPERVISOR] route_after_market_data -> resume_monitor (position already open for {symbol})")
+        return "resume_monitor"
+    print(f"[SUPERVISOR] route_after_market_data -> analyst (no open position for {symbol})")
+    return "analyst"
+
+
 def route_after_analyst(state: TradingState) -> str:
     signals = state.get("signals", {})
     score = abs(float(signals.get("score", 0.0)))

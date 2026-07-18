@@ -15,6 +15,7 @@ def run_trading_cycle(symbol: str):
         "risk": {},
         "order_result": {},
         "monitor_action": "HOLD",
+        "close_reason": "",
         "messages": [],
         "iteration": 0,
         "errors": [],

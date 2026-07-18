@@ -1,8 +1,9 @@
 import time
 from graph.state import TradingState
 from tools.exchange import fetch_positions, fetch_funding_rate
+from tools.risk_calc import calculate_stop_loss, calculate_take_profit, calculate_liquidation_price
 from notifications.alert import send_alert
-from config import MONITOR_INTERVAL_SECONDS
+from config import MONITOR_INTERVAL_SECONDS, MAX_LEVERAGE
 
 
 FUNDING_RATE_THRESHOLD = 0.001   # 0.1% — spike threshold
@@ -66,6 +67,44 @@ def monitor_node(state: TradingState) -> TradingState:
         errors.append(f"monitor:{str(e)}")
 
     return {**state, "monitor_action": monitor_action, "close_reason": close_reason, "errors": errors}
+
+
+def resume_monitor_node(state: TradingState) -> TradingState:
+    """Rebuilds signals and risk from an existing open position, skipping analyst/risk/execution."""
+    symbol = state["symbol"]
+    open_position = state.get("market_data", {}).get("open_position", {})
+
+    side = open_position.get("side", "Buy")
+    direction = "LONG" if side == "Buy" else "SHORT"
+    entry_price = float(open_position.get("entryPrice") or 0)
+
+    stop_loss = float(open_position.get("stopLoss") or 0) or calculate_stop_loss(entry_price, direction)
+    take_profit = float(open_position.get("takeProfit") or 0) or calculate_take_profit(entry_price, direction)
+    liq_price = calculate_liquidation_price(entry_price, MAX_LEVERAGE, direction)
+
+    print(f"[RESUME_MONITOR] {symbol} existing {direction} entry={entry_price} sl={stop_loss} tp={take_profit}")
+
+    return {
+        **state,
+        "signals": {
+            "direction": direction,
+            "score": 0.0,
+            "confidence": "n/a",
+            "reason": "Resuming monitor for existing open position",
+        },
+        "risk": {
+            "approved": True,
+            "entry_price": entry_price,
+            "stop_loss": stop_loss,
+            "take_profit": take_profit,
+            "liq_price": liq_price,
+            "liq_distance_pct": abs(entry_price - liq_price) / entry_price if entry_price else 0,
+            "leverage": MAX_LEVERAGE,
+            "margin_mode": "isolated",
+            "checks": {},
+            "reason": "Reconstructed from existing position",
+        },
+    }
 
 
 def _funding_rate_spiked(symbol: str, direction: str) -> bool:

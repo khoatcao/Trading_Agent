@@ -1,7 +1,7 @@
 from graph.state import TradingState
 from tools.exchange import (
     fetch_ohlcv, fetch_ticker, fetch_funding_rate,
-    fetch_open_interest, fetch_order_book
+    fetch_open_interest, fetch_order_book, fetch_positions
 )
 from tools.whale_data import fetch_all_whale_data
 from notifications.alert import send_alert
@@ -69,5 +69,13 @@ def market_data_node(state: TradingState) -> TradingState:
         err = f"market_data:whale:{type(e).__name__}:{e}"
         print(f"[MARKET_DATA] symbol={symbol} whale error={err}")
         errors.append(err)
+
+    try:
+        existing = fetch_positions(symbol)
+        market_data["open_position"] = existing[0] if existing else None
+        if market_data["open_position"]:
+            print(f"[MARKET_DATA] symbol={symbol} open position found — will skip to monitor")
+    except Exception as e:
+        market_data["open_position"] = None
 
     return {**state, "market_data": market_data, "errors": errors}
