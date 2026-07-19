@@ -4,12 +4,13 @@ from langchain_core.messages import HumanMessage
 from graph.state import TradingState
 from prompts.supervisor_prompt import build_supervisor_prompt
 from notifications.alert import send_alert
-from config import LLM_MODEL, LLM_TEMPERATURE, SIGNAL_THRESHOLD
+from config import LLM_MODEL, LLM_TEMPERATURE, SIGNAL_THRESHOLD, OLLAMA_BASE_URL
 
 
 llm = ChatOllama(
     model=LLM_MODEL,
     temperature=LLM_TEMPERATURE,
+    base_url=OLLAMA_BASE_URL,
 )
 
 

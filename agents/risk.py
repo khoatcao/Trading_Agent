@@ -9,11 +9,11 @@ from tools.risk_calc import (
 from tools.exchange import fetch_balance, fetch_all_positions
 from memory.trade_log import get_daily_starting_balance, save_daily_starting_balance
 from prompts.risk_prompt import build_risk_prompt
-from config import LLM_MODEL, LLM_TEMPERATURE, MAX_LEVERAGE, MARGIN_MODE, MAX_POSITIONS
+from config import LLM_MODEL, LLM_TEMPERATURE, MAX_LEVERAGE, MARGIN_MODE, MAX_POSITIONS, OLLAMA_BASE_URL
 import json
 
 
-llm = ChatOllama(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
+llm = ChatOllama(model=LLM_MODEL, temperature=LLM_TEMPERATURE, base_url=OLLAMA_BASE_URL)
 
 
 def risk_node(state: TradingState) -> TradingState:

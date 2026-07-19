@@ -4,7 +4,7 @@ from langchain_core.messages import HumanMessage
 from graph.state import TradingState
 from tools.indicators import get_all_indicators
 from prompts.analyst_prompt import build_analyst_prompt
-from config import LLM_MODEL, LLM_TEMPERATURE, SIGNAL_THRESHOLD
+from config import LLM_MODEL, LLM_TEMPERATURE, SIGNAL_THRESHOLD, OLLAMA_BASE_URL
 import json
 import re
 
@@ -31,7 +31,7 @@ def normalize_json_response(raw: str) -> str:
     return cleaned.strip()
 
 
-llm = ChatOllama(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
+llm = ChatOllama(model=LLM_MODEL, temperature=LLM_TEMPERATURE, base_url=OLLAMA_BASE_URL)
 
 
 def analyst_node(state: TradingState) -> TradingState:

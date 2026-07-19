@@ -31,9 +31,10 @@ TAKE_PROFIT_PCT = 0.09       # 9% take profit from entry (1:3 R:R)
 MAX_POSITIONS = 3            # max concurrent open positions across all pairs
 MIN_NOTIONAL_USDT = 11.0     # minimum order size in USDT (Bybit min is $10, +$1 buffer)
 
-# LLM (local Ollama — no API key needed)
+# LLM (local Ollama — set OLLAMA_BASE_URL to remote server e.g. ngrok URL from Colab)
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen2.5:7b")
 LLM_TEMPERATURE = 0.0
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 # LangSmith observability (set LANGCHAIN_TRACING_V2=true in .env to enable)
 LANGCHAIN_TRACING_V2 = os.getenv("LANGCHAIN_TRACING_V2", "false")
